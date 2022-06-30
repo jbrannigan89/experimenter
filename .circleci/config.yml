@@ -168,7 +168,10 @@ jobs:
       - run:
           name: Save Images
           command: |
+            results=$(sudo ./.circleci/get_firefox_versions.sh)
             mv /home/circleci/experimenter/new_versions.txt /home/circleci/experimenter/old_versions.txt
+            BUILD_ARGS="--build-arg FIREFOX_VERSION=latest" VERSION="firefox" BUILD_DATE="release" make standalone_firefox
+            BUILD_ARGS="--build-arg FIREFOX_VERSION=devedition-latest" VERSION="firefox" BUILD_DATE="beta" make standalone_firefox
             docker cp /home/circleci/experimenter/old_versions.txt selenium/standalone-firefox:firefox-beta:/old_versions.txt
             docker cp /home/circleci/experimenter/old_versions.txt selenium/standalone-firefox:firefox-release:/old_versions.txt
             docker tag selenium/standalone-firefox:firefox-release ${DOCKERHUB_REPO}:nimbus-firefox-release
