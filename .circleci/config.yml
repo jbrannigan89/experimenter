@@ -27,7 +27,7 @@ jobs:
     resource_class: xlarge
     working_directory: ~/experimenter
     environment:
-      FIREFOX_VERSION: :firefox-release
+      FIREFOX_VERSION: firefox-release
       PYTEST_ARGS: -k DESKTOP -m run_targeting -n 2
     steps:
       - checkout
@@ -41,13 +41,6 @@ jobs:
                 echo "No targeting changes, skipping"
                 circleci-agent step halt
             fi
-      - restore_cache:
-          key: firefox-cache-release
-      - run:
-          name: Load built Firefox and echo version
-          command: |
-            docker load -i /home/circleci/experimenter/images/firefox-release.tar
-            docker run -it selenium/standalone-firefox${FIREFOX_VERSION} firefox --version
       - run:
           name: Run integration tests
           command: |
@@ -61,7 +54,7 @@ jobs:
     resource_class: xlarge
     working_directory: ~/experimenter
     environment:
-      FIREFOX_VERSION: :firefox-beta
+      FIREFOX_VERSION: firefox-beta
       PYTEST_ARGS: -k DESKTOP -m run_targeting -n 2
     steps:
       - checkout
@@ -75,13 +68,6 @@ jobs:
                 echo "No targeting changes, skipping"
                 circleci-agent step halt
             fi
-      - restore_cache:
-          key: firefox-cache-beta
-      - run:
-          name: Load built Firefox and echo version
-          command: |
-            docker load -i /home/circleci/experimenter/images/firefox-beta.tar
-            docker run -it selenium/standalone-firefox${FIREFOX_VERSION} firefox --version
       - run:
           name: Run integration tests
           command: |
@@ -158,11 +144,11 @@ jobs:
       docker_layer_caching: true
     steps:
       - checkout
-      - restore_cache:
-          key: version-cache
       - run:
           name: Check for Firefox Update
           command: |
+            docker pull {DOCKERHUB_REPO}:nimbus-firefox-beta
+            docker cp {DOCKERHUB_REPO}:nimbus-firefox-beta/old_versions.txt /home/circleci/experimenter/old_versions.txt
             results=$(sudo ./.circleci/get_firefox_versions.sh)
             diff /home/circleci/experimenter/new_versions.txt /home/circleci/experimenter/old_versions.txt
             if [ $? -eq 0 ]; then 
@@ -182,20 +168,15 @@ jobs:
       - run:
           name: Save Images
           command: |
-            mkdir -p /home/circleci/experimenter/images
-            docker save -o /home/circleci/experimenter/images/firefox-beta.tar selenium/standalone-firefox:firefox-beta
-            docker save -o /home/circleci/experimenter/images/firefox-release.tar selenium/standalone-firefox:firefox-release
             mv /home/circleci/experimenter/new_versions.txt /home/circleci/experimenter/old_versions.txt
-      - save_cache:
-          name: Cache Beta
-          key: firefox-cache-beta-{{ checksum "/home/circleci/experimenter/images/firefox-beta.tar" }}
-          paths: 
-            - /home/circleci/experimenter/images/firefox-beta.tar
-      - save_cache:
-          name: Cache Release
-          key: firefox-cache-release-{{ checksum "/home/circleci/experimenter/images/firefox-release.tar" }}
-          paths: 
-            - /home/circleci/experimenter/images/firefox-release.tar
+            docker cp /home/circleci/experimenter/old_versions.txt selenium/standalone-firefox:firefox-beta:/old_versions.txt
+            docker cp /home/circleci/experimenter/old_versions.txt selenium/standalone-firefox:firefox-release:/old_versions.txt
+            docker tag selenium/standalone-firefox:firefox-release ${DOCKERHUB_REPO}:nimbus-firefox-release
+            docker tag selenium/standalone-firefox:firefox-beta ${DOCKERHUB_REPO}:nimbus-firefox-beta
+            mkdir -p /home/circleci/experimenter/images
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push ${DOCKERHUB_REPO}:nimbus-firefox-beta
+            docker push ${DOCKERHUB_REPO}:nimbus-firefox-release
       - save_cache:
           key: version-cache-{{ checksum "old_versions.txt" }}
           paths: 
@@ -218,6 +199,7 @@ workflows:
     jobs:
       - check:
           name: check
+      - build_firefox_versions
       - integration_nimbus_desktop_release:
           name: integration_nimbus_desktop_release
           filters:

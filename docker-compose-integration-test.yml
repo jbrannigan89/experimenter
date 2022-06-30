@@ -2,7 +2,7 @@ version: "3"
 
 services:
   firefox:
-    image: selenium/standalone-firefox:latest
+    image: experimenter:${FIREFOX_VERSION}
     env_file: .env
     environment:
       - MOZ_HEADLESS
