@@ -147,8 +147,8 @@ jobs:
       - run:
           name: Check for Firefox Update
           command: |
-            docker pull {DOCKERHUB_REPO}:nimbus-firefox-beta
-            docker cp {DOCKERHUB_REPO}:nimbus-firefox-beta/old_versions.txt /home/circleci/experimenter/old_versions.txt
+            docker pull ${DOCKERHUB_REPO}:nimbus-firefox-beta
+            docker cp ${DOCKERHUB_REPO}:nimbus-firefox-beta/old_versions.txt /home/circleci/experimenter/old_versions.txt
             results=$(sudo ./.circleci/get_firefox_versions.sh)
             diff /home/circleci/experimenter/new_versions.txt /home/circleci/experimenter/old_versions.txt
             if [ $? -eq 0 ]; then 
