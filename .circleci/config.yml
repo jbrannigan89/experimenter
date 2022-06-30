@@ -170,7 +170,6 @@ jobs:
           command: |
             results=$(sudo ./.circleci/get_firefox_versions.sh)
             mv /home/circleci/experimenter/new_versions.txt /home/circleci/experimenter/old_versions.txt
-            git clone --depth=1 git@github.com:SeleniumHQ/docker-selenium.git
             cd docker-selenium
             BUILD_ARGS="--build-arg FIREFOX_VERSION=latest" VERSION="firefox" BUILD_DATE="release" make standalone_firefox
             BUILD_ARGS="--build-arg FIREFOX_VERSION=devedition-latest" VERSION="firefox" BUILD_DATE="beta" make standalone_firefox
